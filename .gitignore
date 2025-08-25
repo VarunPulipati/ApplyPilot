@@ -1,0 +1,26 @@
+cat > .gitignore << 'EOF'
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Env & secrets
+.env
+secrets/
+*.key
+*.pem
+
+# Playwright
+playwright/.cache/
+
+# OS/editor
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# Build artifacts
+storage/docs/
+*.pdf
+*.html
+EOF
