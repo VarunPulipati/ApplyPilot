@@ -1,38 +1,45 @@
-"""
-Import a job by URL, detect ATS, and persist the record.
-"""
-
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Job
+import csv, io
 from ..services.ats_detect import detect_ats
-from ..services.jd_parser import fetch_job_details
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
+@router.get("")
+def list_jobs(db: Session = Depends(get_db)):
+    rows = db.query(Job).order_by(Job.id.desc()).limit(200).all()
+    return [{"id":j.id,"title":j.title,"company":j.company,"ats":j.ats_type,"url":j.url} for j in rows]
 
-class JobImportRequest(BaseModel):
-    url: str
-
-
-@router.post("/import")
-async def import_job(body: JobImportRequest, db: Session = Depends(get_db)):
-    details = await fetch_job_details(body.url)
-    ats_type = detect_ats(body.url)
-
-    job = Job(
-        url=body.url,
-        ats_type=ats_type,
-        company=details.get("company", ""),
-        title=details.get("title", ""),
-        location=details.get("location", ""),
-        fields_schema={},
-    )
-    db.add(job)
+@router.post("/import-csv")
+async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    CSV columns (header row required):
+      company,title,url,location,source
+    We auto-detect ATS from the URL and store only supported ones.
+    """
+    raw = (await file.read()).decode("utf-8", errors="ignore")
+    rdr = csv.DictReader(io.StringIO(raw))
+    created = 0; skipped = 0
+    for r in rdr:
+        url = (r.get("url") or "").strip()
+        if not url: 
+            skipped += 1; continue
+        if db.query(Job).filter(Job.url == url).first():
+            skipped += 1; continue
+        ats = detect_ats(url)
+        if ats not in {"greenhouse","lever","ashby","workable"}:
+            skipped += 1; continue
+        job = Job(
+            url=url,
+            company=r.get("company",""),
+            title=r.get("title",""),
+            location=r.get("location",""),
+            source=r.get("source","csv"),
+            ats_type=ats,
+            fields_schema={}
+        )
+        db.add(job); created += 1
     db.commit()
-    db.refresh(job)
-
-    return {"id": job.id, "ats_type": job.ats_type, "title": job.title}
-  
+    return {"imported": created, "skipped": skipped}
