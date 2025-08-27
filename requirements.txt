@@ -18,6 +18,8 @@ beautifulsoup4~=4.12
 # --- templating & pdf ---
 jinja2~=3.1
 playwright~=1.46
+google-genai>=0.3
+
 
 # --- optional: queues, db drivers (uncomment if/when you use) ---
 # rq~=1.16

@@ -12,7 +12,8 @@ from .routes import packages as packages_routes
 from .routes import jobs as jobs_routes
 from .routes import sources as sources_routes
 from .routes import apply as apply_routes
-
+from dotenv import load_dotenv
+load_dotenv() 
 # Create app first
 app = FastAPI(title=settings.app_name)
 
