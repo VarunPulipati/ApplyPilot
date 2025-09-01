@@ -1,19 +1,14 @@
-"""
-Pydantic schemas for request/response payloads.
-"""
-
+# app/schemas.py
 from pydantic import BaseModel
-
 
 class ProfileCreate(BaseModel):
     name: str
+    email: str = ""
+    phone: str = ""
+    location: str = ""
+    skills_csv: str = ""
     resume_path: str = ""
-    portfolio_url: str = ""
-    tags: str = ""
-
 
 class ProfileOut(ProfileCreate):
     id: int
-
-    class Config:
-        from_attributes = True  # allow ORM-to-Pydantic conversion
+    class Config: from_attributes = True

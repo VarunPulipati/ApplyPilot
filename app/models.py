@@ -8,19 +8,20 @@ from sqlalchemy import String, Text, Integer, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from .database import Base
 
+# app/models.py (add/extend this model)
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 class Profile(Base):
-    """
-    A user's reusable resume/profile variant.
-    Example: "ds-core", "de-azure".
-    """
     __tablename__ = "profiles"
-
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(120))
-    resume_path: Mapped[str] = mapped_column(String(512), default="")   # path to DOCX or PDF
-    portfolio_url: Mapped[str] = mapped_column(String(512), default="")
-    tags: Mapped[str] = mapped_column(String(256), default="")          # comma-separated MVP
+    email: Mapped[str] = mapped_column(String(256), default="")
+    phone: Mapped[str] = mapped_column(String(64), default="")
+    location: Mapped[str] = mapped_column(String(256), default="")
+    skills_csv: Mapped[str] = mapped_column(Text, default="")   # "Python, SQL, Spark"
+    resume_path: Mapped[str] = mapped_column(String(512), default="")  # optional: static master PDF
+
 
 
 class QABank(Base):

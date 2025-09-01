@@ -1,34 +1,23 @@
-"""
-Centralized config using pydantic-settings.
-
-- Loads values from environment variables and a local .env file.
-- Keeps sane defaults for quick local development.
-"""
-
-from pydantic_settings import BaseSettings
-
+# app/config.py
+from __future__ import annotations
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 class Settings(BaseSettings):
-    # Basic app info
+    # App basics
     app_name: str = "ApplyPilot"
-    app_env: str = "dev"  # dev | staging | prod
-    log_level: str = "INFO"
-
-    # Data & storage
-    # SQLite for dev; swap to Postgres later: postgres://user:pass@host:5432/db
     database_url: str = "sqlite:///./local.db"
-    doc_out_dir: str = "./storage/docs"
-    file_store: str = "local"  # or "s3", "azure" in the future
+    doc_out_dir: str = "storage/docs"
 
-    # Optional integrations (leave blank until you wire these)
-    openai_api_key: str | None = None
-    google_client_id: str | None = None
-    google_client_secret: str | None = None
-    google_token_path: str = "./secrets/google_token.json"
+    # AI key: read from env variable GEMINI_API_KEY
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
 
-    class Config:
-        env_file = ".env"  # allow overrides via a local .env
+    # Load from .env and ignore any extra keys so migrations don't fail
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",   # <-- important: prevents "extra inputs" ValidationError
+    )
 
-
-# Single importable instance everywhere:
+# Singleton
 settings = Settings()

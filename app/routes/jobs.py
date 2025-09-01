@@ -12,6 +12,7 @@ def list_jobs(db: Session = Depends(get_db)):
     rows = db.query(Job).order_by(Job.id.desc()).limit(200).all()
     return [{"id":j.id,"title":j.title,"company":j.company,"ats":j.ats_type,"url":j.url} for j in rows]
 
+
 @router.post("/import-csv")
 async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """

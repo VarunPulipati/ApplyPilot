@@ -1,62 +1,62 @@
-# app/services/connectors/greenhouse.py
+from __future__ import annotations
+from typing import List, Dict
 from playwright.sync_api import sync_playwright
 
-def submit_greenhouse(app_url: str, answers: dict, resume_pdf: str) -> str:
-    """
-    Opens a Greenhouse application URL, uploads resume, fills common fields,
-    answers visible textareas, clicks submit, and returns a confirmation snippet.
-    """
+def collect_questions(app_url: str) -> List[str]:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)  # show window in case of CAPTCHA
-        page = browser.new_page()
-        page.goto(app_url, wait_until="domcontentloaded")
+        b = p.chromium.launch(headless=True)
+        pg = b.new_page()
+        pg.goto(app_url, wait_until="domcontentloaded")
+        qs: List[str] = []
+        for sel in ["label", ".field label", ".application-label"]:
+            for el in pg.locator(sel).all():
+                t = (el.text_content() or "").strip()
+                if t and len(t) > 3 and t not in qs:
+                    qs.append(t)
+        for t in pg.locator("textarea").all():
+            ph = (t.get_attribute("placeholder") or "").strip()
+            if ph and ph not in qs:
+                qs.append(ph)
+        b.close()
+        return qs
 
-        # Upload resume if there is a file field
-        file_inputs = page.locator('input[type="file"]')
-        if file_inputs.count() > 0:
-            file_inputs.first.set_input_files(resume_pdf)
+def submit_greenhouse(app_url: str, std: Dict[str,str], resume_pdf: str, custom_answers: Dict[str,str]) -> str:
+    with sync_playwright() as p:
+        b = p.chromium.launch(headless=False)
+        pg = b.new_page()
+        pg.goto(app_url, wait_until="domcontentloaded")
 
-        # Helper to fill if field exists
-        def maybe_fill(selector: str, value: str | None):
-            if not value:
-                return
-            loc = page.locator(selector)
-            if loc.count() > 0:
-                loc.first.fill(value)
+        # Upload resume
+        if pg.locator('input[type="file"]').count():
+            pg.set_input_files('input[type="file"]', resume_pdf)
 
-        # Basic fields (best-effort)
-        maybe_fill('input[name*="first_name" i]', answers.get("first_name"))
-        maybe_fill('input[name*="last_name" i]',  answers.get("last_name"))
-        maybe_fill('input[type="email"]',          answers.get("email"))
-        maybe_fill('input[type="tel"]',            answers.get("phone"))
+        def fill(sel, val):
+            if val and pg.locator(sel).count():
+                pg.fill(sel, val)
 
-        # Fill visible textareas with reasonable defaults
-        for t in page.locator("textarea").all():
-            ph = (t.get_attribute("placeholder") or "").lower()
-            text = answers.get("why_me")
-            if "authorization" in ph or "visa" in ph:
-                text = answers.get("work_auth", text)
-            elif "salary" in ph or "compensation" in ph:
-                text = answers.get("salary", text)
-            if text:
-                t.fill(text)
+        # basics
+        fill('input[name*="first_name" i]', std.get("first_name"))
+        fill('input[name*="last_name" i]',  std.get("last_name"))
+        fill('input[type="email"]',          std.get("email"))
+        fill('input[type="tel"]',            std.get("phone"))
 
-        # Click a submit-like button
-        for sel in [
-            'button:has-text("Submit")',
-            'button:has-text("Apply")',
-            'button[type="submit"]',
-            'input[type="submit"]',
-        ]:
-            if page.locator(sel).count():
-                page.click(sel)
-                break
+        # textareas: map in label order; fallback to first answer
+        labels = []
+        for el in pg.locator("label").all():
+            t = (el.text_content() or "").strip()
+            if t: labels.append(t)
+        tas = pg.locator("textarea").all()
+        for i, t in enumerate(tas):
+            key = labels[i] if i < len(labels) else ""
+            val = custom_answers.get(key) or next(iter(custom_answers.values()), "")
+            if val: t.fill(val)
 
-        page.wait_for_load_state("networkidle")
-
-        # Try to capture any "thank you" / confirmation text
-        conf = page.locator('text=/thank you|application submitted|confirmation/i').first
-        confirmation = (conf.text_content() or "").strip() if conf and conf.is_visible() else ""
-
-        browser.close()
-        return confirmation  # ✅ make sure this is spelled correctly and last
+        # submit
+        for sel in ['button:has-text("Submit")','button:has-text("Apply")','button[type="submit"]','input[type="submit"]']:
+            if pg.locator(sel).count():
+                pg.click(sel); break
+        pg.wait_for_load_state("networkidle")
+        conf = pg.locator('text=/thank you|application submitted|confirmation/i').first
+        txt = (conf.text_content() or "").strip() if conf and conf.is_visible() else ""
+        b.close()
+        return txt

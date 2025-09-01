@@ -13,9 +13,13 @@ from .routes import jobs as jobs_routes
 from .routes import sources as sources_routes
 from .routes import apply as apply_routes
 from dotenv import load_dotenv
+from .routes import qa as qa_routes
+
 load_dotenv() 
 # Create app first
 app = FastAPI(title=settings.app_name)
+app.include_router(qa_routes.router)
+
 
 # Ensure the output directory exists (so PDF writes don't fail)
 Path(settings.doc_out_dir).mkdir(parents=True, exist_ok=True)
