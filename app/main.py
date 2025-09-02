@@ -16,11 +16,13 @@ from dotenv import load_dotenv
 from .routes import qa as qa_routes
 
 Path(settings.doc_out_path).mkdir(parents=True, exist_ok=True)
+from .routes import autopilot as autopilot_routes
 
 load_dotenv() 
 # Create app first
 app = FastAPI(title=settings.app_name)
 app.include_router(qa_routes.router)
+app.include_router(autopilot_routes.router)
 
 
 # Ensure the output directory exists (so PDF writes don't fail)
