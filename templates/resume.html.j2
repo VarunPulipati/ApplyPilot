@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ name }} – Resume</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 28px; }
+    h1 { margin: 0 0 4px 0; font-size: 22px; }
+    .sub { color:#555; margin-bottom: 14px; }
+    h2 { font-size: 16px; margin: 18px 0 6px; border-bottom:1px solid #ddd; padding-bottom:4px;}
+    ul { margin: 6px 0 10px 18px; }
+    li { margin: 4px 0; }
+    .skills span { display:inline-block; margin:2px 6px 2px 0; padding:2px 8px; border:1px solid #ccc; border-radius:8px; font-size:12px;}
+    .role { font-weight: bold; }
+    .company { color:#444; }
+    .years { float:right; color:#666; }
+  </style>
+</head>
+<body>
+  <h1>{{ name }}</h1>
+  <div class="sub">{{ email }} · {{ phone }} · {{ location }}</div>
+
+  {% if summary %}
+  <h2>Summary</h2>
+  <p>{{ summary }}</p>
+  {% endif %}
+
+  {% if skills %}
+  <h2>Skills</h2>
+  <div class="skills">
+    {% for s in skills %}<span>{{ s }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if experience %}
+  <h2>Experience</h2>
+  {% for e in experience %}
+    <div class="exp">
+      <div>
+        <span class="role">{{ e.role }}</span>
+        {% if e.company %}<span class="company"> · {{ e.company }}</span>{% endif %}
+        {% if e.years %}<span class="years">{{ e.years }}</span>{% endif %}
+      </div>
+      {% if e.bullets %}
+      <ul>
+        {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% endif %}
+</body>
+</html>

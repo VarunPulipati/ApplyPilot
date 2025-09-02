@@ -1,23 +1,33 @@
 # app/config.py
 from __future__ import annotations
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../ApplyPilot
 
 class Settings(BaseSettings):
-    # App basics
+    # App
     app_name: str = "ApplyPilot"
-    database_url: str = "sqlite:///./local.db"
+
+    # Storage (relative paths are resolved from project root)
     doc_out_dir: str = "storage/docs"
+    template_dir: str = "templates"
 
-    # AI key: read from env variable GEMINI_API_KEY
-    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    # DB
+    database_url: str = "sqlite:///./local.db"
 
-    # Load from .env and ignore any extra keys so migrations don't fail
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",   # <-- important: prevents "extra inputs" ValidationError
-    )
+    # .env loader
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-# Singleton
+    # Helpers to get absolute Paths
+    @property
+    def doc_out_path(self) -> Path:
+        p = Path(self.doc_out_dir)
+        return p if p.is_absolute() else (_PROJECT_ROOT / p)
+
+    @property
+    def template_path(self) -> Path:
+        p = Path(self.template_dir)
+        return p if p.is_absolute() else (_PROJECT_ROOT / p)
+
 settings = Settings()

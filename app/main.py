@@ -15,6 +15,8 @@ from .routes import apply as apply_routes
 from dotenv import load_dotenv
 from .routes import qa as qa_routes
 
+Path(settings.doc_out_path).mkdir(parents=True, exist_ok=True)
+
 load_dotenv() 
 # Create app first
 app = FastAPI(title=settings.app_name)
