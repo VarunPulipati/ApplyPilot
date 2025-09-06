@@ -1,20 +1,23 @@
 # app/config.py
 from __future__ import annotations
 from pathlib import Path
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../ApplyPilot
 
 class Settings(BaseSettings):
     # App
-    app_name: str = "ApplyPilot"
+    app_name: str = Field(default="ApplyPilot", alias="APP_NAME")
 
     # Storage (relative paths are resolved from project root)
-    doc_out_dir: str = "storage/docs"
+    doc_out_dir: str = Field(default="storage/docs", alias="DOC_OUT_DIR")
     template_dir: str = "templates"
+    resumes_dir: str = Field(default="storage/resumes", alias="RESUMES_DIR")
+    playwright_headless: bool = Field(default=False, alias="PLAYWRIGHT_HEADLESS")
 
     # DB
-    database_url: str = "sqlite:///./local.db"
+    database_url: str = Field(default="sqlite:///./local.db", alias="DATABASE_URL")
 
     # .env loader
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

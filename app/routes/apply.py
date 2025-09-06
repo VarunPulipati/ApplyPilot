@@ -42,6 +42,8 @@ class ApplyRequest(BaseModel):
     profile_id: int = 1
     simulate: bool = True
     resume_mode: str = "ai"  # "ai" or "static"
+    debug: bool = False          # NEW
+
 
 
 @router.post("")
@@ -126,12 +128,13 @@ def apply_once(body: ApplyRequest, db: Session = Depends(get_db)):
             }
 
         # --- 7) Real submit (opens browser, uploads, fills, submits) ---
-        confirmation = submit_greenhouse(
+        confirmation, dbg = submit_greenhouse(
             job.url,
             std,
             resume_pdf_path,
             custom_answers,
             job.company or "",
+            debug=body.debug,
         )
 
         # --- 8) Persist Application row ---
@@ -166,7 +169,7 @@ def apply_once(body: ApplyRequest, db: Session = Depends(get_db)):
             },
         )
 
-        return {"ok": True, "confirmation": confirmation, "excel": xlsx}
+        return {"ok": True, "confirmation": confirmation, "excel": xlsx, "debug": dbg}
 
     except HTTPException:
         # re-raise FastAPI errors as-is
